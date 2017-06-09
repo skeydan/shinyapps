@@ -1,8 +1,9 @@
 library(shiny)
 library(ggplot2)
+library(dplyr)
 library(ggfortify)
 
-pkgs <- c("datasets", "ggplot2")
+pkgs <- c( "ggplot2", "datasets")
 
 shinyServer(function(input, output) {
 
@@ -29,6 +30,7 @@ shinyServer(function(input, output) {
     ds <- get(input$choose_data)
     vars <- names(ds)
     vars
+    
   })
   
   # choose x column  
@@ -51,6 +53,20 @@ shinyServer(function(input, output) {
     if(is.null(vars)) return()
     selectInput("choose_color", "Choose variable for color aesthetic:", choices = vars)
   })
+  
+  #
+  output$qq1 <- renderPlot({
+    if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x))
+      return()
+    ds <- get(input$choose_data)
+    x <- input$choose_x
+    vals <- ds[[x]]
+    if (! is.numeric(vals)) return()
+    sorted <- sort(vals)
+    df <- data_frame(x = (1:(length(sorted)) - 0.5)/length(sorted), y = sorted)
+    ggplot(df, aes(x=x, y=y)) + geom_point() + scale_x_continuous(c(0.0,1.0)) + theme(aspect.ratio = 1)
+  },
+  height = 700)
   
   # 
   output$scatterplot <- renderPlot({
