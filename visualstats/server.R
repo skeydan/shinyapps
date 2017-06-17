@@ -7,7 +7,10 @@ library(threejs)
 pkgs <- c( "ggplot2", "datasets")
 
 getasnumeric <- function(vec) {
-  if (is.factor(vec)) as.numeric(vec) else vec
+  if (is.numeric(vec)) vec
+  else if (is.factor(vec)) as.numeric(vec) 
+  else if (is.character(vec)) as.numeric(as.factor(vec))
+  else validate(need(TRUE, "Please choose only numeric or convetible to numeric variables for this plot type"))
 }
 
 shinyServer(function(input, output) {
@@ -42,38 +45,46 @@ shinyServer(function(input, output) {
   output$choose_x <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_x", "Choose x variable:", choices = vars)
+    selectInput("choose_x", "Choose x variable:", choices = c("", vars))
   })
 
   # choose y column  
   output$choose_y <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_y", "Choose y variable:", choices = vars)
+    selectInput("choose_y", "Choose y variable:", choices = c("",vars))
   })
   
   # choose z column for 3-dim
   output$choose_z <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_z", "Choose z variable:", choices = vars)
+    selectInput("choose_z", "Choose z variable for 3d plot:", choices = c("",vars))
   })
   
   # choose column for color aesthetic
   output$choose_color <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_color", "Choose variable for color aesthetic:", choices = vars)
+    selectInput("choose_color", "Choose variable for color aesthetic (scatterplot):", choices = c("",vars))
+  })
+  
+  # choose column for color aesthetic
+  output$choose_size <- renderUI({
+    vars <- choose_column()
+    if(is.null(vars)) return()
+    selectInput("choose_size", "Choose variable for size aesthetic (scatterplot):", choices = c("",vars))
   })
   
   #
   output$qq1 <- renderPlot({
     if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x))
       return()
+    validate(need(input$choose_x != "", "Please choose an x variable for the qqplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
     vals <- ds[[x]]
-    if (! is.numeric(vals)) return()
+    vals <- getasnumeric(vals)
     sorted <- sort(vals)
     df <- data_frame(x = (1:(length(sorted)) - 0.5)/length(sorted), y = sorted)
     ggplot(df, aes(x=x, y=y)) + geom_point() + scale_x_continuous(c(0.0,1.0)) + theme(aspect.ratio = 1)
@@ -85,10 +96,14 @@ shinyServer(function(input, output) {
     if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
       is.null(input$choose_y)) 
         return()
+    validate(need(input$choose_x != "", "Please choose an x variable for the scatterplot."))
+    validate(need(input$choose_y != "", "Please choose a y variable for the scatterplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
     y <- input$choose_y
-    ggplot(ds, aes_string(x=x, y=y)) + geom_point()
+    color <- input$choose_color
+    print(color)
+    ggplot(ds, aes_string(x=x, y=y, color=color)) + geom_point()
   })  
   
   # 
@@ -107,6 +122,7 @@ shinyServer(function(input, output) {
   output$tsplot <- renderPlot({
     if(is.null(input$choose_pkg) || is.null(input$choose_data)) return()
     ds <- get(input$choose_data)
+    validate(need(is.ts(ds), "Time series plots will appear here, but for time series only."))
     if (!is.ts(ds)) return()
     autoplot(ds)
   }) 
