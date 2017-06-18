@@ -20,7 +20,7 @@ shinyUI(fluidPage(
       br(),
       uiOutput("choose_color"),
       br(),
-      uiOutput("choose_size")
+      uiOutput("choose_size_or_shape")
     ),
     
     # Show a tabset that includes a plot, summary, and table view

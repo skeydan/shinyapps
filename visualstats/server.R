@@ -10,7 +10,7 @@ getasnumeric <- function(vec) {
   if (is.numeric(vec)) vec
   else if (is.factor(vec)) as.numeric(vec) 
   else if (is.character(vec)) as.numeric(as.factor(vec))
-  else validate(need(TRUE, "Please choose only numeric or convetible to numeric variables for this plot type"))
+  else validate(need(TRUE, "Please choose only numeric or convertible to numeric variables for this plot type"))
 }
 
 shinyServer(function(input, output) {
@@ -45,42 +45,42 @@ shinyServer(function(input, output) {
   output$choose_x <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_x", "Choose x variable:", choices = c("", vars))
+    selectInput("choose_x", "Choose x variable:", choices = c("NA", vars))
   })
 
   # choose y column  
   output$choose_y <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_y", "Choose y variable:", choices = c("",vars))
+    selectInput("choose_y", "Choose y variable:", choices = c("NA",vars))
   })
   
   # choose z column for 3-dim
   output$choose_z <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_z", "Choose z variable for 3d plot:", choices = c("",vars))
+    selectInput("choose_z", "3d plot: choose z variable:", choices = c("NA",vars))
   })
   
   # choose column for color aesthetic
   output$choose_color <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_color", "Choose variable for color aesthetic (scatterplot):", choices = c("",vars))
+    selectInput("choose_color", "Scatterplot: choose variable for color aesthetic:", choices = c("NA",vars))
   })
   
   # choose column for color aesthetic
-  output$choose_size <- renderUI({
+  output$choose_size_or_shape <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_size", "Choose variable for size aesthetic (scatterplot):", choices = c("",vars))
+    selectInput("choose_size_or_shape", "Scatterplot: choose variable for size (continuous) or shape (discrete) aesthetic:", choices = c("NA",vars))
   })
   
   #
   output$qq1 <- renderPlot({
     if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x))
       return()
-    validate(need(input$choose_x != "", "Please choose an x variable for the qqplot."))
+    validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
     vals <- ds[[x]]
@@ -96,14 +96,28 @@ shinyServer(function(input, output) {
     if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
       is.null(input$choose_y)) 
         return()
-    validate(need(input$choose_x != "", "Please choose an x variable for the scatterplot."))
-    validate(need(input$choose_y != "", "Please choose a y variable for the scatterplot."))
+    validate(need(input$choose_x != "NA" & input$choose_y != "NA", "Please choose x and y variables for the scatterplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
     y <- input$choose_y
-    color <- input$choose_color
-    print(color)
-    ggplot(ds, aes_string(x=x, y=y, color=color)) + geom_point()
+    if (input$choose_color != "NA") {
+      color <- input$choose_color
+      color_col <- ds[[color]]
+    }
+    print(input$choose_size_or_shape )
+    if (input$choose_size_or_shape != "NA") {
+      var <- input$choose_size_or_shape
+      var_col <- ds[[var]]
+      if(is.numeric(var_col)) { 
+        size <- var
+        } else {shape <- var}
+    }
+    g <- ggplot(ds, aes_string(x=x,
+                               y=y,
+                               color=if(exists("color")) color else NULL,
+                               shape = if(exists("shape")) shape else NULL,
+                               size = if (exists("size")) size else NULL)) + geom_point()
+    if(exists("color") && is.numeric(color_col)) g + scale_color_continuous(low='cyan', high='orange') else g
   })  
   
   # 
