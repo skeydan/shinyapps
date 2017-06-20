@@ -69,11 +69,25 @@ shinyServer(function(input, output) {
     selectInput("choose_color", "Scatterplot: choose variable for color aesthetic:", choices = c("NA",vars))
   })
   
-  # choose column for color aesthetic
+  # choose column for size resp. shape aesthetic
   output$choose_size_or_shape <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
     selectInput("choose_size_or_shape", "Scatterplot: choose variable for size (continuous) or shape (discrete) aesthetic:", choices = c("NA",vars))
+  })
+  
+  # choose column for color aesthetic
+  output$choose_grid_col <- renderUI({
+    vars <- choose_column()
+    if(is.null(vars)) return()
+    selectInput("choose_grid_col", "Scatterplot: choose column variable for facet_grid:", choices = c("NA",vars))
+  })
+  
+  # choose column for color aesthetic
+  output$choose_grid_row <- renderUI({
+    vars <- choose_column()
+    if(is.null(vars)) return()
+    selectInput("choose_grid_row", "Scatterplot: choose row variable for facet_grid:", choices = c("NA",vars))
   })
   
   #
@@ -92,6 +106,18 @@ shinyServer(function(input, output) {
   height = 700)
   
   # 
+  output$qq2 <- renderPlot({
+    if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
+       is.null(input$choose_y)) 
+      return()
+    validate(need(input$choose_x != "NA" & input$choose_y != "NA", "Please choose x and y variables for the qqplot."))
+    ds <- get(input$choose_data)
+    x <- input$choose_x
+    y <- input$choose_y
+    g <- ggplot(ds) + stat_qq(aes_string(x=x, y=y))
+  })
+    
+  # 
   output$scatterplot <- renderPlot({
     if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
       is.null(input$choose_y)) 
@@ -104,7 +130,6 @@ shinyServer(function(input, output) {
       color <- input$choose_color
       color_col <- ds[[color]]
     }
-    print(input$choose_size_or_shape )
     if (input$choose_size_or_shape != "NA") {
       var <- input$choose_size_or_shape
       var_col <- ds[[var]]
@@ -112,12 +137,27 @@ shinyServer(function(input, output) {
         size <- var
         } else {shape <- var}
     }
+    if (input$choose_grid_col != "NA") {
+      grid_col <- input$choose_grid_col
+    }
+    if (input$choose_grid_row != "NA") {
+      grid_row <- input$choose_grid_row
+    }
+    if(exists("grid_row") && exists("grid_col")) {
+      grid_formula <- paste0(grid_row, " ~ ", grid_col)
+    } else if (exists("grid_row")) {
+      grid_formula <- paste0(grid_row, " ~ .")
+    } else if (exists("grid_col")) {
+      grid_formula <- paste0(". ~ ", grid_col)
+    }
     g <- ggplot(ds, aes_string(x=x,
                                y=y,
                                color=if(exists("color")) color else NULL,
                                shape = if(exists("shape")) shape else NULL,
                                size = if (exists("size")) size else NULL)) + geom_point()
-    if(exists("color") && is.numeric(color_col)) g + scale_color_continuous(low='cyan', high='orange') else g
+    if(exists("color") && is.numeric(color_col)) g <- g +  scale_color_continuous(low='cyan', high='orange')
+    if(exists("grid_formula")) g <- g + facet_grid(grid_formula)
+    g
   })  
   
   # 

@@ -18,6 +18,10 @@ shinyUI(fluidPage(
       br(),
       uiOutput("choose_z"),
       br(),
+      uiOutput("choose_grid_col"),
+      br(),
+      uiOutput("choose_grid_row"),
+      br(),
       uiOutput("choose_color"),
       br(),
       uiOutput("choose_size_or_shape")
