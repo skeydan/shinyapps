@@ -14,17 +14,7 @@ shinyUI(fluidPage(
       br(),
       uiOutput("choose_x"),
       br(),
-      uiOutput("choose_y"),
-      br(),
-      uiOutput("choose_z"),
-      br(),
-      uiOutput("choose_grid_col"),
-      br(),
-      uiOutput("choose_grid_row"),
-      br(),
-      uiOutput("choose_color"),
-      br(),
-      uiOutput("choose_size_or_shape")
+      uiOutput("choose_y")
     ),
     
     # Show a tabset that includes a plot, summary, and table view
@@ -34,8 +24,9 @@ shinyUI(fluidPage(
                   tabPanel("qqplot 1d", plotOutput("qq1")),
                   tabPanel("qqplot 2d", plotOutput("qq2")),
                   tabPanel("theor. qqplot", plotOutput("qqt")),
-                  tabPanel("scatterplot", plotOutput("scatterplot")),
-                  tabPanel("3d plot", scatterplotThreeOutput("three")),
+                  tabPanel("scatterplot", plotOutput("scatterplot"), uiOutput("choose_grid_col"),
+                           uiOutput("choose_grid_row"), uiOutput("choose_color"), uiOutput("choose_size_or_shape")),
+                  tabPanel("3d plot", scatterplotThreeOutput("three"), uiOutput("choose_z")),
                   tabPanel("time series plot", plotOutput("tsplot"))
       )
     )

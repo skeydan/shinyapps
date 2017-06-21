@@ -22,8 +22,8 @@ shinyServer(function(input, output) {
   
   # choose data set
   output$choose_data <- renderUI({
-    if(is.null(input$choose_pkg))
-      return()
+    # if(is.null(input$choose_pkg))
+    #   return()
     pkg <- input$choose_pkg
     choices = unclass(data(package = pkg))$results[,3]
     selectInput("choose_data", "Choose data set", as.list(choices))
@@ -31,8 +31,8 @@ shinyServer(function(input, output) {
  
   # get column names
   choose_column <- reactive({
-    if(is.null(input$choose_pkg) || is.null(input$choose_data))
-      return()
+    # if(is.null(input$choose_pkg) || is.null(input$choose_data))
+    #   return()
     pkg <- input$choose_pkg
     do.call(require, list(pkg))
     ds <- get(input$choose_data)
@@ -66,34 +66,34 @@ shinyServer(function(input, output) {
   output$choose_color <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_color", "Scatterplot: choose variable for color aesthetic:", choices = c("NA",vars))
+    selectInput("choose_color", "color:", choices = c("NA",vars))
   })
   
   # choose column for size resp. shape aesthetic
   output$choose_size_or_shape <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_size_or_shape", "Scatterplot: choose variable for size (continuous) or shape (discrete) aesthetic:", choices = c("NA",vars))
+    selectInput("choose_size_or_shape", "size (continuous) / shape (discrete):", choices = c("NA",vars))
   })
   
   # choose column for color aesthetic
   output$choose_grid_col <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_grid_col", "Scatterplot: choose column variable for facet_grid:", choices = c("NA",vars))
+    selectInput("choose_grid_col", "facet_grid: column", choices = c("NA",vars))
   })
   
   # choose column for color aesthetic
   output$choose_grid_row <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_grid_row", "Scatterplot: choose row variable for facet_grid:", choices = c("NA",vars))
+    selectInput("choose_grid_row", "facet_grid: row", choices = c("NA",vars))
   })
   
   #
   output$qq1 <- renderPlot({
-    if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x))
-      return()
+    # if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x))
+    #   return()
     validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
@@ -103,25 +103,28 @@ shinyServer(function(input, output) {
     df <- data_frame(x = (1:(length(sorted)) - 0.5)/length(sorted), y = sorted)
     ggplot(df, aes(x=x, y=y)) + geom_point() + scale_x_continuous(c(0.0,1.0)) + theme(aspect.ratio = 1)
   },
-  height = 700)
+  height = 600)
   
   # 
   output$qq2 <- renderPlot({
-    if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
-       is.null(input$choose_y)) 
-      return()
+    # if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
+    #    is.null(input$choose_y)) 
+    #  return()
     validate(need(input$choose_x != "NA" & input$choose_y != "NA", "Please choose x and y variables for the qqplot."))
     ds <- get(input$choose_data)
-    x <- input$choose_x
-    y <- input$choose_y
-    g <- ggplot(ds) + stat_qq(aes_string(x=x, y=y))
-  })
+    x <- ds[[input$choose_x]]
+    y <- ds[[input$choose_y]]
+    d <- as.data.frame(qqplot(x, y, plot.it=FALSE))
+    g <- ggplot(d) + geom_point(aes(x=x, y=y)) + theme(aspect.ratio = 1)
+    g
+  },
+  height = 600)
     
   # 
   output$scatterplot <- renderPlot({
-    if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
-      is.null(input$choose_y)) 
-        return()
+    # if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
+    #   is.null(input$choose_y)) 
+    #     return()
     validate(need(input$choose_x != "NA" & input$choose_y != "NA", "Please choose x and y variables for the scatterplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
@@ -162,9 +165,11 @@ shinyServer(function(input, output) {
   
   # 
   output$three <- renderScatterplotThree({
-    if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
-       is.null(input$choose_y) || is.null(input$choose_z)) 
-      return()
+    # if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
+    #    is.null(input$choose_y) || is.null(input$choose_z)) 
+    #   return()
+    validate(need(input$choose_x != "NA" & input$choose_y != "NA" & input$choose_z != "NA",
+                  "Please choose x, y, and z variables for the 3d plot."))
     ds <- get(input$choose_data)
     x <- getasnumeric(ds[[input$choose_x]])
     y <- getasnumeric(ds[[input$choose_y]])
@@ -174,7 +179,7 @@ shinyServer(function(input, output) {
   
   # time series
   output$tsplot <- renderPlot({
-    if(is.null(input$choose_pkg) || is.null(input$choose_data)) return()
+    # if(is.null(input$choose_pkg) || is.null(input$choose_data)) return()
     ds <- get(input$choose_data)
     validate(need(is.ts(ds), "Time series plots will appear here, but for time series only."))
     if (!is.ts(ds)) return()
