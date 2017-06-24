@@ -45,21 +45,23 @@ shinyServer(function(input, output) {
   output$choose_x <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_x", "Choose x variable:", choices = c("NA", vars))
+    selectInput("choose_x", "Choose x variable:", choices = c("NA", vars), selected = "carat")
+
   })
 
   # choose y column  
   output$choose_y <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_y", "Choose y variable:", choices = c("NA",vars))
+    selectInput("choose_y", "Choose y variable:", choices = c("NA",vars), selected = "price")
+
   })
   
   # choose z column for 3-dim
   output$choose_z <- renderUI({
     vars <- choose_column()
     if(is.null(vars)) return()
-    selectInput("choose_z", "3d plot: choose z variable:", choices = c("NA",vars))
+    selectInput("choose_z", "3d plot: choose z variable:", choices = c("NA",vars), selected = "depth")
   })
   
   # choose column for color aesthetic
@@ -92,39 +94,58 @@ shinyServer(function(input, output) {
   
   #
   output$qq1 <- renderPlot({
-    # if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x))
-    #   return()
-    validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
+   validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
     vals <- ds[[x]]
     vals <- getasnumeric(vals)
+    if(input$log_x1) vals <- log(vals)
     sorted <- sort(vals)
     df <- data_frame(x = (1:(length(sorted)) - 0.5)/length(sorted), y = sorted)
-    ggplot(df, aes(x=x, y=y)) + geom_point() + scale_x_continuous(c(0.0,1.0)) + theme(aspect.ratio = 1)
+    ggplot(df, aes(x=x, y=y)) + geom_point() + scale_x_continuous(c(0.0,1.0)) + 
+      theme(aspect.ratio = 1) + 
+      ylab(ifelse(input$log_x1, paste0("log(",input$choose_x,")"), input$choose_x)) +
+      xlab("fraction")
   },
   height = 600)
   
   # 
+  output$qqt <- renderPlot({
+    validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
+    ds <- get(input$choose_data)
+    x <- ds[[input$choose_x]]
+    if(input$log_x) x <- log(x)
+    d <- as.data.frame(qqplot(x, y, plot.it=FALSE))
+    g <- ggplot(d) + geom_point(aes(x=x, y=y)) + theme(aspect.ratio = 1) +
+       xlab(ifelse(input$log_x, paste0("log(",input$choose_x,")"), input$choose_x)) +
+       ylab(ifelse(input$log_y, paste0("log(",input$choose_y,")"), input$choose_y))
+    g
+  },
+  height = 600)
+  
   output$qq2 <- renderPlot({
-    # if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
-    #    is.null(input$choose_y)) 
-    #  return()
     validate(need(input$choose_x != "NA" & input$choose_y != "NA", "Please choose x and y variables for the qqplot."))
     ds <- get(input$choose_data)
     x <- ds[[input$choose_x]]
     y <- ds[[input$choose_y]]
+    if(input$log_x) x <- log(x)
+    if(input$log_y) y <- log(y)
+    
+    #####################
+    # https://artax.karlin.mff.cuni.cz/r-help/library/qualityTools/html/qqPlot.html
+    # https://artax.karlin.mff.cuni.cz/r-help/library/qualityTools/html/ppPlot.html
+    ####################
+    
     d <- as.data.frame(qqplot(x, y, plot.it=FALSE))
-    g <- ggplot(d) + geom_point(aes(x=x, y=y)) + theme(aspect.ratio = 1)
+    g <- ggplot(d) + geom_point(aes(x=x, y=y)) + theme(aspect.ratio = 1) +
+      xlab(ifelse(input$log_x, paste0("log(",input$choose_x,")"), input$choose_x)) +
+      ylab(ifelse(input$log_y, paste0("log(",input$choose_y,")"), input$choose_y))
     g
   },
   height = 600)
     
   # 
   output$scatterplot <- renderPlot({
-    # if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
-    #   is.null(input$choose_y)) 
-    #     return()
     validate(need(input$choose_x != "NA" & input$choose_y != "NA", "Please choose x and y variables for the scatterplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
@@ -165,9 +186,6 @@ shinyServer(function(input, output) {
   
   # 
   output$three <- renderScatterplotThree({
-    # if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) || 
-    #    is.null(input$choose_y) || is.null(input$choose_z)) 
-    #   return()
     validate(need(input$choose_x != "NA" & input$choose_y != "NA" & input$choose_z != "NA",
                   "Please choose x, y, and z variables for the 3d plot."))
     ds <- get(input$choose_data)
@@ -179,7 +197,6 @@ shinyServer(function(input, output) {
   
   # time series
   output$tsplot <- renderPlot({
-    # if(is.null(input$choose_pkg) || is.null(input$choose_data)) return()
     ds <- get(input$choose_data)
     validate(need(is.ts(ds), "Time series plots will appear here, but for time series only."))
     if (!is.ts(ds)) return()
