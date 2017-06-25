@@ -3,6 +3,7 @@ library(ggplot2)
 library(dplyr)
 library(ggfortify)
 library(threejs)
+library(qualityTools)
 
 pkgs <- c( "ggplot2", "datasets")
 
@@ -92,9 +93,8 @@ shinyServer(function(input, output) {
     selectInput("choose_grid_row", "facet_grid: row", choices = c("NA",vars))
   })
   
-  #
   output$qq1 <- renderPlot({
-   validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
+    validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
     vals <- ds[[x]]
@@ -110,15 +110,15 @@ shinyServer(function(input, output) {
   height = 600)
   
   # 
-  output$qqt <- renderPlot({
+  output$probplot <- renderPlot({
     validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
     ds <- get(input$choose_data)
     x <- ds[[input$choose_x]]
     if(input$log_x) x <- log(x)
     d <- as.data.frame(qqplot(x, y, plot.it=FALSE))
     g <- ggplot(d) + geom_point(aes(x=x, y=y)) + theme(aspect.ratio = 1) +
-       xlab(ifelse(input$log_x, paste0("log(",input$choose_x,")"), input$choose_x)) +
-       ylab(ifelse(input$log_y, paste0("log(",input$choose_y,")"), input$choose_y))
+      xlab(ifelse(input$log_x, paste0("log(",input$choose_x,")"), input$choose_x)) +
+      ylab(ifelse(input$log_y, paste0("log(",input$choose_y,")"), input$choose_y))
     g
   },
   height = 600)
@@ -130,12 +130,6 @@ shinyServer(function(input, output) {
     y <- ds[[input$choose_y]]
     if(input$log_x) x <- log(x)
     if(input$log_y) y <- log(y)
-    
-    #####################
-    # https://artax.karlin.mff.cuni.cz/r-help/library/qualityTools/html/qqPlot.html
-    # https://artax.karlin.mff.cuni.cz/r-help/library/qualityTools/html/ppPlot.html
-    ####################
-    
     d <- as.data.frame(qqplot(x, y, plot.it=FALSE))
     g <- ggplot(d) + geom_point(aes(x=x, y=y)) + theme(aspect.ratio = 1) +
       xlab(ifelse(input$log_x, paste0("log(",input$choose_x,")"), input$choose_x)) +
@@ -143,7 +137,7 @@ shinyServer(function(input, output) {
     g
   },
   height = 600)
-    
+  
   # 
   output$scatterplot <- renderPlot({
     validate(need(input$choose_x != "NA" & input$choose_y != "NA", "Please choose x and y variables for the scatterplot."))
