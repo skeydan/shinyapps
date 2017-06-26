@@ -23,8 +23,8 @@ shinyServer(function(input, output) {
   
   # choose data set
   output$choose_data <- renderUI({
-    # if(is.null(input$choose_pkg))
-    #   return()
+    if(is.null(input$choose_pkg))
+      return()
     pkg <- input$choose_pkg
     choices = unclass(data(package = pkg))$results[,3]
     selectInput("choose_data", "Choose data set", as.list(choices))
@@ -32,8 +32,8 @@ shinyServer(function(input, output) {
  
   # get column names
   choose_column <- reactive({
-    # if(is.null(input$choose_pkg) || is.null(input$choose_data))
-    #   return()
+    if(is.null(input$choose_pkg) || is.null(input$choose_data))
+      return()
     pkg <- input$choose_pkg
     do.call(require, list(pkg))
     ds <- get(input$choose_data)
@@ -140,27 +140,39 @@ shinyServer(function(input, output) {
   
   # 
   output$scatterplot <- renderPlot({
+    if(is.null(input$choose_pkg) || is.null(input$choose_data) || is.null(input$choose_x) ||
+       is.null(input$choose_y))
+      return()
     validate(need(input$choose_x != "NA" & input$choose_y != "NA", "Please choose x and y variables for the scatterplot."))
     ds <- get(input$choose_data)
     x <- input$choose_x
     y <- input$choose_y
-    if (input$choose_color != "NA") {
-      color <- input$choose_color
-      color_col <- ds[[color]]
+    if (!is.null(input$choose_color)) {
+      if (input$choose_color != "NA") {
+        color <- input$choose_color
+        color_col <- ds[[color]]
+      }
+    } 
+    if (!is.null(input$choose_size_or_shape)) {
+      if (input$choose_size_or_shape != "NA") {
+        var <- input$choose_size_or_shape
+        var_col <- ds[[var]]
+        if(is.numeric(var_col)) { 
+          size <- var
+          } else {shape <- var}
+      }
     }
-    if (input$choose_size_or_shape != "NA") {
-      var <- input$choose_size_or_shape
-      var_col <- ds[[var]]
-      if(is.numeric(var_col)) { 
-        size <- var
-        } else {shape <- var}
+    if (!is.null(input$choose_grid_col)) {
+      if (input$choose_grid_col != "NA") {
+        grid_col <- input$choose_grid_col
+      }
+    }  
+    if (!is.null(input$choose_grid_row)) {
+      if (input$choose_grid_row != "NA") {
+        grid_row <- input$choose_grid_row
+      }
     }
-    if (input$choose_grid_col != "NA") {
-      grid_col <- input$choose_grid_col
-    }
-    if (input$choose_grid_row != "NA") {
-      grid_row <- input$choose_grid_row
-    }
+    
     if(exists("grid_row") && exists("grid_col")) {
       grid_formula <- paste0(grid_row, " ~ ", grid_col)
     } else if (exists("grid_row")) {
