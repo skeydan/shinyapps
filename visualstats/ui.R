@@ -17,7 +17,10 @@ shinyUI(fluidPage(
       br(),
       uiOutput("choose_x"),  
       br(),
-      uiOutput("choose_y")
+      uiOutput("choose_y"),
+      br(),
+      plotOutput("get_points", click = "click"),
+      verbatimTextOutput("info")
     ),
     
     # Show a tabset that includes a plot, summary, and table view
@@ -50,7 +53,9 @@ shinyUI(fluidPage(
                            scatterplotThreeOutput("three"),
                            uiOutput("choose_z")),
                   tabPanel("time series plot",
-                           plotOutput("tsplot"))
+                           plotOutput("tsplot")),
+                  tabPanel("adj. var plot",
+                           plotOutput("adj_var_plot"))
       )
     )
   )

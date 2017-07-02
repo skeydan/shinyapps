@@ -5,7 +5,7 @@ library(ggfortify)
 library(threejs)
 library(qualityTools)
 
-pkgs <- c( "ggplot2", "datasets")
+pkgs <<- c( "ggplot2", "datasets")
 
 getasnumeric <- function(vec) {
   if (is.numeric(vec)) vec
@@ -13,6 +13,9 @@ getasnumeric <- function(vec) {
   else if (is.character(vec)) as.numeric(as.factor(vec))
   else validate(need(TRUE, "Please choose only numeric or convertible to numeric variables for this plot type"))
 }
+
+#pts <- data_frame(x = numeric(0), y = numeric(0))
+pts <- data_frame(x =22, y = 7)
 
 shinyServer(function(input, output) {
 
@@ -208,5 +211,22 @@ shinyServer(function(input, output) {
     if (!is.ts(ds)) return()
     autoplot(ds)
   }) 
+  
+  output$get_points <- renderPlot({
+    x <- seq(-10,10)
+    y <- seq(-10,10)
+    ggplot(data_frame(x=x, y=y), aes(x=x, y=y)) + geom_vline(xintercept = 0, color="grey") + 
+      geom_hline(yintercept = 0, color = "grey") + 
+      coord_cartesian(xlim = c(-10,10), ylim = c(-10,10))
+                                                                     
+  })
+  
+  output$info <- renderText({
+    if(is.null(input$click$x)) return()
+    pts <<- pts %>% add_row(x = input$click$x, y = input$click$y)
+    print(pts$x)
+    paste0("x=", input$click$x, "\ny=", input$click$y)
+ 
+  })
   
 })
