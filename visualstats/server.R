@@ -14,8 +14,7 @@ getasnumeric <- function(vec) {
   else validate(need(TRUE, "Please choose only numeric or convertible to numeric variables for this plot type"))
 }
 
-#pts <- data_frame(x = numeric(0), y = numeric(0))
-pts <- data_frame(x =22, y = 7)
+pts <- data_frame(x = numeric(0), y = numeric(0))
 
 shinyServer(function(input, output) {
 
@@ -98,13 +97,24 @@ shinyServer(function(input, output) {
   
   output$qq1 <- renderPlot({
     validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
-    ds <- get(input$choose_data)
-    x <- input$choose_x
-    vals <- ds[[x]]
-    vals <- getasnumeric(vals)
+    if (input$type == "use_points") {
+      validate(need(nrow(pts) > 0, "Please click at least one point for the plot (or switch back
+                    to using a given dataset)"))
+    } 
+    if (input$type == "use_points") {
+      vals <- pts$x
+      print(vals)
+    } else  {
+      ds <- get(input$choose_data)
+      x <- input$choose_x
+      vals <- ds[[x]]
+      vals <- getasnumeric(vals)
+    }
+    print("came here but????")
     if(input$log_x1) vals <- log(vals)
     sorted <- sort(vals)
     df <- data_frame(x = (1:(length(sorted)) - 0.5)/length(sorted), y = sorted)
+    str(df)
     ggplot(df, aes(x=x, y=y)) + geom_point() + scale_x_continuous(c(0.0,1.0)) + 
       theme(aspect.ratio = 1) + 
       ylab(ifelse(input$log_x1, paste0("log(",input$choose_x,")"), input$choose_x)) +
@@ -213,20 +223,12 @@ shinyServer(function(input, output) {
   }) 
   
   output$get_points <- renderPlot({
-    x <- seq(-10,10)
-    y <- seq(-10,10)
-    ggplot(data_frame(x=x, y=y), aes(x=x, y=y)) + geom_vline(xintercept = 0, color="grey") + 
+    if(!is.null(input$click$x)) pts <<- pts %>% add_row(x = input$click$x, y = input$click$y)
+    ggplot(pts, aes(x=x, y=y)) + geom_vline(xintercept = 0, color="grey") + 
       geom_hline(yintercept = 0, color = "grey") + 
-      coord_cartesian(xlim = c(-10,10), ylim = c(-10,10))
+      coord_cartesian(xlim = c(-10,10), ylim = c(-10,10)) +
+      geom_point()
                                                                      
-  })
-  
-  output$info <- renderText({
-    if(is.null(input$click$x)) return()
-    pts <<- pts %>% add_row(x = input$click$x, y = input$click$y)
-    print(pts$x)
-    paste0("x=", input$click$x, "\ny=", input$click$y)
- 
   })
   
 })

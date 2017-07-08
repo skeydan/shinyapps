@@ -11,16 +11,21 @@ shinyUI(fluidPage(
   
   sidebarLayout(
     sidebarPanel(
+      tags$div(HTML("By default, data from the chosen dataset is used.<br/>
+               Use check box below to switch to drawing your own data (only usable with qqplots 1d or 2d, prob plots, and simple scatter plots.)"),
+          style="font-weight: bold;"),
+      br(),
       uiOutput("choose_pkg"),
-      br(),
       uiOutput("choose_data"),
-      br(),
       uiOutput("choose_x"),  
-      br(),
       uiOutput("choose_y"),
       br(),
-      plotOutput("get_points", click = "click"),
-      verbatimTextOutput("info")
+      radioButtons("type", NULL, 
+                   list("Use given dataset" = "use_dataset",
+                        "Use self-drawn points" = "use_points")),
+      br(),
+      div("Draw your own points here:", style="font-weight: bold;"),
+      plotOutput("get_points", click = "click")
     ),
     
     # Show a tabset that includes a plot, summary, and table view
