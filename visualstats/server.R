@@ -14,7 +14,8 @@ getasnumeric <- function(vec) {
   else validate(need(TRUE, "Please choose only numeric or convertible to numeric variables for this plot type"))
 }
 
-pts <- data_frame(x = numeric(0), y = numeric(0))
+pts <- reactiveVal()
+pts(data_frame(x = numeric(0), y = numeric(0)))
 
 shinyServer(function(input, output) {
 
@@ -96,13 +97,16 @@ shinyServer(function(input, output) {
   })
   
   output$qq1 <- renderPlot({
-    validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
     if (input$type == "use_points") {
-      validate(need(nrow(pts) > 0, "Please click at least one point for the plot (or switch back
+      validate(need(nrow(pts()) > 0, "Please click at least one point for the plot (or switch back
                     to using a given dataset)"))
-    } 
+    } else {
+      validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
+    }
+    
     if (input$type == "use_points") {
-      vals <- pts$x
+      df <- pts()
+      vals <- df$x
       print(vals)
     } else  {
       ds <- get(input$choose_data)
@@ -110,11 +114,9 @@ shinyServer(function(input, output) {
       vals <- ds[[x]]
       vals <- getasnumeric(vals)
     }
-    print("came here but????")
     if(input$log_x1) vals <- log(vals)
     sorted <- sort(vals)
     df <- data_frame(x = (1:(length(sorted)) - 0.5)/length(sorted), y = sorted)
-    str(df)
     ggplot(df, aes(x=x, y=y)) + geom_point() + scale_x_continuous(c(0.0,1.0)) + 
       theme(aspect.ratio = 1) + 
       ylab(ifelse(input$log_x1, paste0("log(",input$choose_x,")"), input$choose_x)) +
@@ -124,10 +126,24 @@ shinyServer(function(input, output) {
   
   # 
   output$probplot <- renderPlot({
-    validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
-    ds <- get(input$choose_data)
-    x <- ds[[input$choose_x]]
+    
+    if (input$type == "use_points") {
+      validate(need(nrow(pts()) > 0, "Please click at least one point for the plot (or switch back
+                    to using a given dataset)"))
+    } else {
+      validate(need(input$choose_x != "NA", "Please choose an x variable for the qqplot."))
+    }
+    if (input$type == "use_points") {
+      df <- pts()
+      x <- df$x
+      print(x)
+    } else  {
+      ds <- get(input$choose_data)
+      x <- ds[[input$choose_x]]
+    }
+
     if(input$log_x) x <- log(x)
+    ### what's going on here? not yet impl.?
     d <- as.data.frame(qqplot(x, y, plot.it=FALSE))
     g <- ggplot(d) + geom_point(aes(x=x, y=y)) + theme(aspect.ratio = 1) +
       xlab(ifelse(input$log_x, paste0("log(",input$choose_x,")"), input$choose_x)) +
@@ -223,12 +239,22 @@ shinyServer(function(input, output) {
   }) 
   
   output$get_points <- renderPlot({
-    if(!is.null(input$click$x)) pts <<- pts %>% add_row(x = input$click$x, y = input$click$y)
-    ggplot(pts, aes(x=x, y=y)) + geom_vline(xintercept = 0, color="grey") + 
+    df <- pts()
+    ggplot(df, aes(x=x, y=y)) + geom_vline(xintercept = 0, color="grey") + 
       geom_hline(yintercept = 0, color = "grey") + 
       coord_cartesian(xlim = c(-10,10), ylim = c(-10,10)) +
       geom_point()
                                                                      
+  })
+  
+  observeEvent(input$click, {
+    newdf <- pts() %>% add_row(x = input$click$x, y = input$click$y)
+    pts(newdf)
+    #str(pts())
+  })
+  
+  observeEvent(input$erase_points, {
+    pts(data_frame(x = numeric(0), y = numeric(0)))
   })
   
 })

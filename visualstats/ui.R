@@ -12,7 +12,7 @@ shinyUI(fluidPage(
   sidebarLayout(
     sidebarPanel(
       tags$div(HTML("By default, data from the chosen dataset is used.<br/>
-               Use check box below to switch to drawing your own data (only usable with qqplots 1d or 2d, prob plots, and simple scatter plots.)"),
+               Use check box below to draw your own data (only usable with qqplots 1d or 2d, prob plots, and simple scatter plots)"),
           style="font-weight: bold;"),
       br(),
       uiOutput("choose_pkg"),
@@ -25,6 +25,7 @@ shinyUI(fluidPage(
                         "Use self-drawn points" = "use_points")),
       br(),
       div("Draw your own points here:", style="font-weight: bold;"),
+      actionButton("erase_points", "Erase points"),
       plotOutput("get_points", click = "click")
     ),
     
